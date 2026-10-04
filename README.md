@@ -4,6 +4,8 @@ An end-to-end machine learning project that predicts whether Autopilot was **cla
 
 It covers data cleaning, feature engineering, logistic regression and random forest models, evaluation (cross-validation, confusion matrices, ROC/PR curves, feature importance), and a Streamlit app.
 
+![Streamlit app: enter crash details, get the probability that Autopilot was claimed](docs/images/app.png)
+
 ## Project structure
 
 ```
@@ -43,7 +45,17 @@ streamlit run app/streamlit_app.py  # open http://localhost:8501
 | Logistic Regression | 0.57 | 0.30 |
 | Random Forest | 0.57 | 0.24 |
 
+![Confusion matrices on the held-out test set](docs/images/confusion_matrices.png)
+
 Logistic regression is the deployed model. The signal is weak. The strongest feature is whether the car model was reported at all, which reflects how detailed the news reports were rather than how the car was driven.
+
+![Top logistic regression coefficients](docs/images/logreg_coefficients.png)
+
+## What the data shows
+
+![Share of crashes with Autopilot claimed, by year, car model and region](docs/images/rates_by_group.png)
+
+Rates vary by year and car model, but most groups are small, so the differences are noisy.
 
 ## Limitations
 
