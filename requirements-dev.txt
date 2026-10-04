@@ -1,0 +1,4 @@
+# Everything needed to run the notebook and training script locally
+-r requirements.txt
+matplotlib>=3.8
+jupyter

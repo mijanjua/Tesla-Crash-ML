@@ -6,16 +6,18 @@ Run from the project root (train first so the model file exists):
 """
 import json
 import sys
+import warnings
 from datetime import date
 from pathlib import Path
 
 import joblib
 import pandas as pd
 import streamlit as st
+from sklearn.exceptions import InconsistentVersionWarning
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src import data  # noqa: E402
-from src.train import MODEL_DIR  # noqa: E402
+from src.train import MODEL_DIR, build_models  # noqa: E402
 
 st.set_page_config(page_title="Tesla Autopilot Claim Predictor", page_icon="🚗", layout="wide")
 
@@ -25,7 +27,17 @@ def load_model():
     path = MODEL_DIR / "autopilot_model.joblib"
     if not path.exists():
         return None, None
-    return joblib.load(path), json.loads((MODEL_DIR / "metadata.json").read_text())
+    meta = json.loads((MODEL_DIR / "metadata.json").read_text())
+    try:
+        # A pickle from another scikit-learn version may load but behave wrongly, so treat it as a failure
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", InconsistentVersionWarning)
+            model = joblib.load(path)
+    except Exception:
+        # The dataset is tiny, so retraining the same model here takes about a second
+        df = data.load_dataset()
+        model = build_models()[meta["model_name"]].fit(df[data.FEATURES], df[data.TARGET])
+    return model, meta
 
 
 @st.cache_data

@@ -20,7 +20,7 @@ models/                          trained model + metrics used by the app
 ```bash
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # app-only: requirements.txt
 
 python -m src.train                 # train both models, save the best
 streamlit run app/streamlit_app.py  # open http://localhost:8501
