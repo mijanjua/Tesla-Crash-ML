@@ -61,7 +61,8 @@ def clean(raw: pd.DataFrame) -> pd.DataFrame:
     # Rows without a case number are the spreadsheet's totals/notes at the bottom
     df = raw[raw["aCase #"].notna()].copy()
 
-    text_cols = df.select_dtypes(include="object").columns
+    # pandas 2 reads text as "object", pandas 3 as "str"; include both
+    text_cols = df.select_dtypes(include=["object", "string"]).columns
     df[text_cols] = df[text_cols].apply(lambda s: s.str.strip())
 
     out = pd.DataFrame(index=df.index)

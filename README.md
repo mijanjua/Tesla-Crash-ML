@@ -1,5 +1,6 @@
 # Tesla Fatal Crashes: Predicting "Autopilot Claimed"
 
+[![tests](https://github.com/mijanjua/Tesla-Crash-ML/actions/workflows/tests.yml/badge.svg)](https://github.com/mijanjua/Tesla-Crash-ML/actions/workflows/tests.yml)
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tesla-autopilot-claims.streamlit.app/)
 
 **Live demo:** https://tesla-autopilot-claims.streamlit.app/
@@ -18,6 +19,7 @@ src/data.py                      cleaning + feature engineering (shared by every
 src/train.py                     models, evaluation, saves the best model
 notebooks/01_eda_and_model.ipynb step-by-step walkthrough with charts
 app/streamlit_app.py             interactive prediction app
+tests/                           pytest checks for cleaning, features and models
 models/                          trained model + metrics used by the app
 ```
 
@@ -30,6 +32,7 @@ pip install -r requirements-dev.txt   # app-only: requirements.txt
 
 python -m src.train                 # train both models, save the best
 streamlit run app/streamlit_app.py  # open http://localhost:8501
+pytest                              # run the tests
 ```
 
 ## Approach
