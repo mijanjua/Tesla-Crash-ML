@@ -1,5 +1,9 @@
 # Tesla Fatal Crashes: Predicting "Autopilot Claimed"
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tesla-autopilot-claims.streamlit.app/)
+
+**Live demo:** https://tesla-autopilot-claims.streamlit.app/
+
 An end-to-end machine learning project that predicts whether Autopilot was **claimed** to be active in a fatal Tesla crash, from when and where the crash happened, the car model, and who was killed.
 
 It covers data cleaning, feature engineering, logistic regression and random forest models, evaluation (cross-validation, confusion matrices, ROC/PR curves, feature importance), and a Streamlit app.
