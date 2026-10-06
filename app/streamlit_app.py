@@ -95,6 +95,93 @@ def gauge_html(proba: float, threshold: float, base_rate: float, theme: str) -> 
 """
 
 
+CARD_PALETTE = {
+    # Good/bad status colors, each with an icon + label so meaning never rests on color alone
+    "dark": {"good_bg": "rgba(47,191,113,0.14)", "good_edge": "#2fbf71",
+             "bad_bg": "rgba(227,25,55,0.16)", "bad_edge": TESLA_RED,
+             "ink": "#f2f2f0", "muted": "#a3a29b"},
+    "light": {"good_bg": "#e7f5ed", "good_edge": "#1f8a4c",
+              "bad_bg": "#fde8eb", "bad_edge": "#c3122d",
+              "ink": "#0b0b0b", "muted": "#52514e"},
+}
+
+
+def metric_cards_html(cv: dict, positive_rate: float, theme: str) -> str:
+    """Four large cards, green when the CV mean beats a random-guessing baseline, red when it doesn't."""
+    c = CARD_PALETTE.get(theme, CARD_PALETTE["dark"])
+    specs = [
+        ("roc_auc", "ROC-AUC", 0.5, "{:.2f}"),
+        ("pr_auc", "PR-AUC", positive_rate, "{:.2f}"),
+        ("recall", "Recall", 0.5, "{:.0%}"),
+        ("precision", "Precision", positive_rate, "{:.0%}"),
+    ]
+    cards = ""
+    for key, label, baseline, fmt in specs:
+        value, std = cv[f"{key} (mean)"], cv[f"{key} (std)"]
+        good = value > baseline
+        bg, edge = (c["good_bg"], c["good_edge"]) if good else (c["bad_bg"], c["bad_edge"])
+        status = "▲ Above baseline" if good else "▼ Below baseline"
+        std_txt = f"± {std:.2f}" if fmt == "{:.2f}" else f"± {std:.0%}"
+        cards += f"""
+  <div style="flex:1 1 180px;background:{bg};border:1px solid {edge};border-left:6px solid {edge};
+              border-radius:12px;padding:16px 18px">
+    <div style="font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:{c['muted']}">
+      {label}</div>
+    <div style="font-size:52px;font-weight:700;line-height:1.05;color:{c['ink']};margin:6px 0 2px">
+      {fmt.format(value)}</div>
+    <div style="font-size:13px;color:{c['muted']}">{std_txt} · baseline {fmt.format(baseline)}</div>
+    <div style="margin-top:10px;font-size:13px;font-weight:700;color:{edge}">{status}</div>
+  </div>"""
+    return f"""
+<div style="font-family:'Source Sans Pro',sans-serif;display:flex;flex-wrap:wrap;gap:14px;margin:8px 0 4px">
+{cards}
+</div>"""
+
+
+def _mix(hex_a: str, hex_b: str, t: float) -> str:
+    a = [int(hex_a[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(hex_b[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(x + (y - x) * t):02x}" for x, y in zip(a, b))
+
+
+def confusion_heatmap_html(cm: list[list[int]], theme: str) -> str:
+    """2x2 confusion matrix as a single-hue heatmap: higher counts get darker cells."""
+    # One red ramp, light -> deep, stepped separately for each theme's background
+    low, high = ("#2a1418", "#e31937") if theme == "dark" else ("#fde8eb", "#8f0e22")
+    ink = "#f2f2f0" if theme == "dark" else "#0b0b0b"
+    muted = "#a3a29b" if theme == "dark" else "#52514e"
+    vmax = max(max(row) for row in cm) or 1
+    names = [["True negative", "False positive"], ["False negative", "True positive"]]
+    rows = ["Actual: not claimed", "Actual: claimed"]
+    cols = ["Predicted: not claimed", "Predicted: claimed"]
+
+    cells = ""
+    for i in range(2):
+        cells += (f'<div style="display:flex;align-items:center;justify-content:flex-end;padding-right:12px;'
+                  f'font-size:13px;color:{muted};text-align:right">{rows[i]}</div>')
+        for j in range(2):
+            t = cm[i][j] / vmax
+            fill = _mix(low, high, t)
+            # Light text once the cell is dark enough (dark theme: always, since cells stay dark)
+            text = "#ffffff" if theme == "dark" or t > 0.45 else "#0b0b0b"
+            cells += f"""
+    <div style="background:{fill};border-radius:10px;padding:18px 10px;text-align:center;color:{text}">
+      <div style="font-size:44px;font-weight:700;line-height:1">{cm[i][j]}</div>
+      <div style="font-size:12px;margin-top:6px;opacity:.85">{names[i][j]}</div>
+    </div>"""
+
+    header = "".join(f'<div style="text-align:center;font-size:13px;color:{muted};padding-bottom:4px">{h}</div>'
+                     for h in cols)
+    return f"""
+<div style="font-family:'Source Sans Pro',sans-serif;max-width:560px;color:{ink}">
+  <div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:6px">
+    <div></div>{header}
+    {cells}
+  </div>
+  <div style="font-size:12px;color:{muted};margin-top:8px">Darker = more crashes in that cell.</div>
+</div>"""
+
+
 @st.cache_resource
 def load_model():
     path = MODEL_DIR / "autopilot_model.joblib"
@@ -198,19 +285,18 @@ with perf_tab:
         f"Only {meta['positive_rate']:.0%} have Autopilot claimed, so accuracy is misleading: "
         "always guessing 'no' would be ~87% accurate. The scores below focus on the claimed class."
     )
-    cv = meta["cv_metrics"]
-    cols = st.columns(4)
-    for col, (key, label) in zip(cols, [("roc_auc", "ROC-AUC"), ("pr_auc", "PR-AUC"),
-                                        ("recall", "Recall"), ("precision", "Precision")]):
-        col.metric(f"CV {label}", f"{cv[f'{key} (mean)']:.2f}",
-                   help=f"± {cv[f'{key} (std)']:.2f} across 25 folds (5-fold CV repeated 5 times)")
-    st.caption("Baseline (always 'no'): ROC-AUC 0.50, PR-AUC ≈ positive rate. CV recall/precision use a 0.5 threshold.")
+    theme = st.context.theme.type or "dark"
+    st.html(metric_cards_html(meta["cv_metrics"], meta["positive_rate"], theme))
+    st.caption(
+        "Cross-validated means (5-fold CV repeated 5 times, ± = std across the 25 folds). "
+        "Baseline = random guessing: ROC-AUC 0.50; PR-AUC and precision equal the positive rate "
+        f"({meta['positive_rate']:.0%}); recall 50% (a coin flip catches half). "
+        "Recall/precision use a 0.5 threshold."
+    )
 
     st.markdown(f"**Confusion matrix on the held-out test set** (model trained on the other 75%, "
                 f"threshold {meta.get('threshold', 0.5):.2f})")
-    cm = meta["test_metrics"]["confusion_matrix"]
-    st.table(pd.DataFrame(cm, index=["Actual: not claimed", "Actual: claimed"],
-                          columns=["Predicted: not claimed", "Predicted: claimed"]))
+    st.html(confusion_heatmap_html(meta["test_metrics"]["confusion_matrix"], theme))
 
 with data_tab:
     st.subheader("Autopilot-claimed rate in the data")
