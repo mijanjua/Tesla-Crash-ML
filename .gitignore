@@ -12,6 +12,7 @@ __pycache__/
 # Data: only the Tesla dataset belongs to this project
 data/*
 !data/Tesla Deaths - Deaths.csv
+!data/tesla_clean.csv
 
 # Local Claude Code settings
 .claude/settings.local.json
