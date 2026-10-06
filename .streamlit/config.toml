@@ -1,0 +1,17 @@
+[theme]
+# Opens in dark mode; viewers can switch to light under ⋮ → Settings
+base = "dark"
+# Tesla red accent: slider, active tab, focus outlines, buttons
+primaryColor = "#e31937"
+
+[theme.dark]
+primaryColor = "#e31937"
+backgroundColor = "#0e0e10"
+secondaryBackgroundColor = "#1c1c20"
+textColor = "#f2f2f0"
+
+[theme.light]
+primaryColor = "#e31937"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f0f2"
+textColor = "#0b0b0b"
