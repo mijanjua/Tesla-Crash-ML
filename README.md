@@ -52,6 +52,12 @@ pytest                              # run the tests
 | Logistic Regression | 0.61 ± 0.11 | 0.35 ± 0.14 |
 | Random Forest | 0.62 ± 0.10 | 0.29 ± 0.11 |
 
+The app's **Model performance** tab shows the same numbers against a random-guessing baseline:
+
+![Model performance tab: metric cards colored by whether each beats the baseline, and a confusion-matrix heatmap](docs/images/app_performance.png)
+
+Both models on the held-out test set, from the notebook:
+
 ![Confusion matrices on the held-out test set](docs/images/confusion_matrices.png)
 
 Logistic regression is the deployed model, chosen for the best PR-AUC. Its decision threshold is tuned to maximize F1 on out-of-fold predictions; the tuned value is 0.5, because balanced class weights already shift the probabilities. The signal is weak. The strongest feature is whether the car model was reported at all, which reflects how detailed the news reports were rather than how the car was driven.
