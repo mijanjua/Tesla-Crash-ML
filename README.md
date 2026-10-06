@@ -44,19 +44,31 @@ pytest                              # run the tests
 
 ## Results
 
-5-fold cross-validation on the training set:
+5-fold cross-validation repeated 5 times on the training set (mean ± std across 25 folds):
 
 | Model | ROC-AUC | PR-AUC |
 |---|---|---|
 | Baseline (always "no") | 0.50 | 0.13 |
-| Logistic Regression | 0.57 | 0.30 |
-| Random Forest | 0.57 | 0.24 |
+| Logistic Regression | 0.61 ± 0.11 | 0.35 ± 0.14 |
+| Random Forest | 0.62 ± 0.10 | 0.29 ± 0.11 |
 
 ![Confusion matrices on the held-out test set](docs/images/confusion_matrices.png)
 
-Logistic regression is the deployed model. The signal is weak. The strongest feature is whether the car model was reported at all, which reflects how detailed the news reports were rather than how the car was driven.
+Logistic regression is the deployed model, chosen for the best PR-AUC. Its decision threshold is tuned to maximize F1 on out-of-fold predictions; the tuned value is 0.5, because balanced class weights already shift the probabilities. The signal is weak. The strongest feature is whether the car model was reported at all, which reflects how detailed the news reports were rather than how the car was driven.
 
 ![Top logistic regression coefficients](docs/images/logreg_coefficients.png)
+
+### What else I tried
+
+All variants were compared on the same 50 folds (5-fold CV repeated 10 times). Paired differences are much less noisy than comparing two averages.
+
+| Change vs. deployed model | PR-AUC change | Folds where it's better |
+|---|---|---|
+| TF-IDF text model on the description (Autopilot/FSD words removed) | +0.018 | 64% |
+| Stronger regularization (C=0.1) | +0.011 | 60% |
+| Random forest instead of logistic regression | −0.056 | 40% |
+
+The text model helps slightly but consistently. It wasn't adopted because the gain is small and it would make the app depend on free-text input.
 
 ## What the data shows
 

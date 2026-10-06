@@ -41,6 +41,16 @@ def test_evaluate_on_test_returns_confusion_matrix(split):
     assert 0 <= result["roc_auc"] <= 1
 
 
+def test_tune_threshold_picks_best_f1(split):
+    X_train, _, y_train, _ = split
+    model = train.build_models()["Logistic Regression"]
+    best, table = train.tune_threshold(model, X_train, y_train)
+    assert 0.05 <= best <= 0.95
+    assert best == table.loc[table["f1"].idxmax(), "threshold"]
+    # Raising the threshold can only shrink the set of predicted positives
+    assert table["predicted_yes"].is_monotonic_decreasing
+
+
 def test_importances_cover_all_encoded_features(split):
     X_train, _, y_train, _ = split
     models = train.build_models()
